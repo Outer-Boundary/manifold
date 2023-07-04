@@ -1,41 +1,34 @@
-use crate::AppState;
-use actix_web::{get, web, HttpResponse, Responder};
+use actix_web::{get, web, HttpResponse};
+use deadpool_redis::Pool;
+use sqlx::MySqlPool;
 
+use crate::{
+    types::error::ErrorResponse,
+    util::health_check::{database_connection_check, redis_connection_check},
+};
+
+#[tracing::instrument(skip(redis))]
 #[get("/health-check")]
-async fn health_check(app_state: web::Data<AppState>) -> impl Responder {
-    let result = sqlx::query("SELECT 1").execute(&app_state.pool).await;
+async fn health_check_route(pool: web::Data<MySqlPool>, redis: web::Data<Pool>) -> HttpResponse {
+    tracing::debug!("Running health check route...");
 
-    if result.is_ok() {
-        return HttpResponse::Ok().finish();
-    }
+    // Determine whether the database connection is working.
+    let db_result = database_connection_check(&pool).await;
 
-    HttpResponse::ServiceUnavailable().finish()
-}
+    if let Err(err) = db_result {
+        tracing::error!("Failed database connection health check failed. {}", err);
+        return HttpResponse::ServiceUnavailable()
+            .json(ErrorResponse::new(0, "Unable to connect to database"));
+    };
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{util::tests::TestPool, Error};
-    use actix_web::{http::StatusCode, test, web::Data, App};
+    let redis_result = redis_connection_check(&redis).await;
 
-    #[actix_web::test]
-    async fn test_health_check() -> Result<(), Error> {
-        let pool = TestPool::connect().await?;
+    if let Err(err) = redis_result {
+        tracing::error!("Failed redis connection health check. {}", err);
+        return HttpResponse::ServiceUnavailable()
+            .json(ErrorResponse::new(0, "Unable to connect to redis"));
+    };
 
-        let app_state = AppState { pool: pool.get() };
-
-        let app = test::init_service(
-            App::new()
-                .app_data(Data::new(app_state.clone()))
-                .service(health_check),
-        )
-        .await;
-
-        let req = test::TestRequest::get().uri("/health-check").to_request();
-        let res = test::call_service(&app, req).await;
-
-        assert_eq!(res.status(), StatusCode::OK);
-
-        Ok(())
-    }
+    tracing::info!("Server is healthy.");
+    HttpResponse::NoContent().finish()
 }

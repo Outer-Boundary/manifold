@@ -5,7 +5,7 @@ mod mobile;
 #[cfg(mobile)]
 pub use mobile::*;
 
-pub type SetupHook = Box<dyn FnOnce(&mut App) -> Result<(), Box<dyn std::error::Error>> + Send>;
+pub type SetupHook = Box<dyn FnOnce(&mut App) -> MFResult<(), Box<dyn std::error::Error>> + Send>;
 
 #[derive(Default)]
 pub struct AppBuilder {
@@ -20,7 +20,7 @@ impl AppBuilder {
     #[must_use]
     pub fn setup<F>(mut self, setup: F) -> Self
     where
-        F: FnOnce(&mut App) -> Result<(), Box<dyn std::error::Error>> + Send + 'static,
+        F: FnOnce(&mut App) -> MFResult<(), Box<dyn std::error::Error>> + Send + 'static,
     {
         self.setup.replace(Box::new(setup));
         self
