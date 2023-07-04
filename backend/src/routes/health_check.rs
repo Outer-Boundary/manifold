@@ -9,11 +9,11 @@ use crate::{
 
 #[tracing::instrument(skip(redis))]
 #[get("/health-check")]
-async fn health_check_route(pool: web::Data<MySqlPool>, redis: web::Data<Pool>) -> HttpResponse {
+async fn health_check_route(db_pool: web::Data<MySqlPool>, redis: web::Data<Pool>) -> HttpResponse {
     tracing::debug!("Running health check route...");
 
     // Determine whether the database connection is working.
-    let db_result = database_connection_check(&pool).await;
+    let db_result = database_connection_check(&db_pool).await;
 
     if let Err(err) = db_result {
         tracing::error!("Failed database connection health check failed. {}", err);

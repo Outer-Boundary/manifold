@@ -9,13 +9,11 @@ use color_eyre::Result;
 #[actix_web::main]
 async fn main() -> Result<()> {
     color_eyre::install()?;
-
     dotenvy::dotenv().ok();
-
-    let config = get_config().expect("Failed to read settings");
+    let config = get_config()?;
 
     let subscriber = telemetry::get_subscriber(config.environment.clone());
-    telemetry::init_subscriber(subscriber);
+    telemetry::init_subscriber(subscriber)?;
 
     let application = Application::build(config.clone(), None).await?;
 

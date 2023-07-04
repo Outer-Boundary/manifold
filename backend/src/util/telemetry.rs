@@ -1,6 +1,6 @@
-use tracing_subscriber::layer::SubscriberExt;
-
 use crate::util::configuration::Environment;
+use color_eyre::Result;
+use tracing_subscriber::layer::SubscriberExt;
 
 pub fn get_subscriber(env: Environment) -> impl tracing::Subscriber + Send + Sync {
     let env_filter = if env.is_dev() {
@@ -26,6 +26,7 @@ pub fn get_subscriber(env: Environment) -> impl tracing::Subscriber + Send + Syn
     subscriber.with(json_log)
 }
 
-pub fn init_subscriber(subscriber: impl tracing::Subscriber + Send + Sync) {
-    tracing::subscriber::set_global_default(subscriber).expect("Failed to set subscriber");
+pub fn init_subscriber(subscriber: impl tracing::Subscriber + Send + Sync) -> Result<()> {
+    tracing::subscriber::set_global_default(subscriber)?;
+    Ok(())
 }

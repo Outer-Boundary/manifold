@@ -3,16 +3,16 @@ use color_eyre::{eyre::eyre, Result};
 use deadpool_redis::redis::{cmd, Value};
 use sqlx::MySqlPool;
 
-pub async fn database_connection_check(pool: &MySqlPool) -> Result<()> {
+pub async fn database_connection_check(db_pool: &MySqlPool) -> Result<()> {
     sqlx::query("SELECT 1")
-        .execute(pool)
+        .execute(db_pool)
         .await
         .map(|_| ())
         .map_err(|err| eyre!(err))
 }
 
-pub async fn redis_connection_check(pool: &RedisPool) -> Result<()> {
-    let mut conn = pool.get().await?;
+pub async fn redis_connection_check(db_pool: &RedisPool) -> Result<()> {
+    let mut conn = db_pool.get().await?;
 
     cmd("SET")
         .arg(&["connection_check", "success"])

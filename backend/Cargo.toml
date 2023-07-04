@@ -11,6 +11,7 @@ path = "src/main.rs"
 name = "backend"
 
 [dependencies]
+actix-session = { version = "0.7.2", features = ["cookie-session"] }
 actix-web = "4"
 argonautica = { version = "0.2.0", features = ["simd"] }
 chrono = { version = "0.4.24", features = ["serde"] }

@@ -161,15 +161,14 @@ impl Display for Environment {
 /// followed by `_` separator,  and then the variable, e.g.
 /// `MANIFOLD__APPLICATION_PORT=5001` for `port` to be set as `5001`
 pub fn get_config() -> Result<Configuration> {
-    let base_path = std::env::current_dir().expect("Failed to determine the current directory");
+    let base_path = std::env::current_dir()?;
     let settings_directory = base_path.join("settings");
 
     // Detect the running environment.
     // Default to `development` if unspecified.
     let environment: Environment = std::env::var("MANIFOLD_ENVIRONMENT")
         .unwrap_or_else(|_| "development".into())
-        .try_into()
-        .expect("Failed to parse MANIFOLD__ENVIRONMENT.");
+        .try_into()?;
     let environment_filename = format!("{}.yaml", environment);
     let config = config::Config::builder()
         .add_source(config::File::from(settings_directory.join("base.yaml")))
